@@ -106,6 +106,7 @@ Make it happen.  Now!  *clap*clap*"""
     # Append footer to email
     emailMessage += emailFooter
 
+    # Plagarized from http://mattharris.org/2016/02/introduction-aws-lambda/
     session = boto3.session.Session()
     ses = session.client('ses')
     ses.send_email(
@@ -113,8 +114,9 @@ Make it happen.  Now!  *clap*clap*"""
         Destination={
             'ToAddresses': [
                 'jeremy@CloudCrier.com',
-                'jim@CloudCrier.com',
                 'mike@CloudCrier.com',
+                'jim@CloudCrier.com',
+                'mark@CloudCrier.com',
             ]
         },
         Message={
