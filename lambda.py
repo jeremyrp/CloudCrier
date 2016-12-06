@@ -1,11 +1,13 @@
 __author__ = "Jeremy Phillips"
 __license__ = "GPL"
-__version__ = "2016.10.11.1"
+__version__ = "2016.12.06.1"
 __maintainer__ = "Jeremy Phillips"
 __email__ = "code@cloudcrier.com"
 __status__ = "Production"
 ###  Description:  Lambda function for initiation from IoT function for CloudCrier
 ###  Version:
+###  Environment variables:  CC_DDB_TableName
+###                          Email_List
 
 
 import boto3
@@ -14,8 +16,8 @@ import decimal
 import time
 
 def lambda_handler(event, context):
-    dynamodb = boto3.resource("dynamodb", region_name='us-west-2')
-    table = dynamodb.Table('ButtonCounter')
+    dynamodb = boto3.resource("dynamodb", region_name=os.environ['AWS_REGION'])
+    table = dynamodb.Table(os.environ['CC_DDB_TableName'])
 
     itemSingle = table.get_item(
         Key={
@@ -50,9 +52,7 @@ Learn more: www.CloudCrier.com
         emailMessage = """
 Jeremy has told the Cloud Crier that he doesn't give a shit...
 
-And I mean he REALLY doesn't give a shit.  Like "taking my red stapler and set the building on fire" don't give a shit...
-
-You might want to work from home the rest of the day..."""
+"""
         #Update DB record
         response = table.update_item(
             Key={
@@ -69,10 +69,7 @@ You might want to work from home the rest of the day..."""
         emailMessage = """
 Jeremy has told the Cloud Crier that he is happy...
 
-This could also just be a gas bubble.  And like a gas bubble, this will
-likely pass very soon...
-
-You may now carry on with your meaningless existence."""
+"""
         #Update DB record
         response = table.update_item(
             Key={
@@ -113,15 +110,12 @@ Make it happen.  Now!  *clap*clap*"""
         Source='CityCloud@CloudCrier.com',
         Destination={
             'ToAddresses': [
-                'jeremy@CloudCrier.com',
-                'mike@CloudCrier.com',
-                'jim@CloudCrier.com',
-                'mark@CloudCrier.com',
+                os.environ['Email_List']
             ]
         },
         Message={
             'Subject': {
-                'Data': 'Jeremy has informed the Cloud Crier...',
+                'Data': 'Message from the cloud...',
             },
             'Body': {
                 'Text': {
@@ -132,3 +126,5 @@ Make it happen.  Now!  *clap*clap*"""
     )
 
     return "Message: ", emailMessage
+
+#['jeremy@CloudCrier.com','mike@CloudCrier.com','jim@CloudCrier.com']
