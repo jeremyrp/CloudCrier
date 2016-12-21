@@ -23,3 +23,6 @@ This is where custom domain comes into play.  SES will allow you to verify a dom
 
 The 200/day max is not a consideration for me, as I can only press the button so many times per day before I invite revenge communications.  Plus, the battery on the button only lasts ~1000 presses.
 
+## Additional Content
+[Permissions](./docs/permissions.md)
+[Deployment Harness](./docs/deployment_harness.md)
