@@ -3,10 +3,25 @@ import os
 import zipfile
 import tempfile
 import boto3
-import pprint
+import json
+import datetime
+
+
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, date):
+        serial = obj.isoformat()
+        return serial
+
+    if isinstance(obj, time):
+        serial = obj.isoformat()
+        return serial
+
+    return obj.__dict__
 
 # Constants
-CONFIG_FILE_PATH = "./conf/deploy_aws.cfg"
+CONFIG_FILE_PATH = "./conf/aws.cfg"
 UPLOAD_PATH = tempfile.mkdtemp()
 UPLOAD_FILE = "cc_lambda_event.zip"
 
@@ -57,4 +72,6 @@ lambdaResponse = lambdaClient.update_function_code(
 uploadFile.close()
 
 print("Finished uploading...")
-print("File Name: " + UPLOAD_PATH + UPLOAD_FILE)
+#print("File Name: " + UPLOAD_PATH + UPLOAD_FILE)
+#print("Response: {}".format(lambdaResponse))
+print json.dumps(lambdaResponse, skipkeys=True, indent=4, sort_keys=True, default=serialize)

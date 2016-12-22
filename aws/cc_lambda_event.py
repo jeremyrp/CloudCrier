@@ -14,8 +14,17 @@ import boto3
 import datetime
 import decimal
 import time
+import logging
+import os
 
 def cc_lambda_event(event, context):
+
+    # Check to see if test flag sent, so to enable debug info
+    if "DEBUG_FLAG" in event:
+        DEBUG_FLAG=True
+    else:
+        DEBUG_FLAG=False
+
     dynamodb = boto3.resource("dynamodb", region_name=os.environ['AWS_REGION'])
     table = dynamodb.Table(os.environ['CC_DDB_TableName'])
 
@@ -35,7 +44,7 @@ def cc_lambda_event(event, context):
         }
     )
 
-    emailFooter = """
+    emailTxtFooter = """
 
 
 Cumulative Count of Jeremy's Decrees
@@ -49,24 +58,25 @@ Learn more: www.CloudCrier.com
 
     # determine button press to define message
     if (event["clickType"] == "SINGLE"):
-        emailMessage = """
+        emailTxtMessage = """
 Jeremy has told the Cloud Crier that he doesn't give a shit...
 
 """
-        #Update DB record
-        response = table.update_item(
-            Key={
-                'ButtonPressType':"SINGLE"
-            },
-            UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
-            ExpressionAttributeValues={
-                ":i": decimal.Decimal(1),
-                ":t": decimal.Decimal(time.time())
-            },
-            ReturnValues='NONE'
-        )
+        if DEBUG_FLAG != True:
+            #Update DB record
+            response = table.update_item(
+                Key={
+                    'ButtonPressType':"SINGLE"
+                },
+                UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
+                ExpressionAttributeValues={
+                    ":i": decimal.Decimal(1),
+                    ":t": decimal.Decimal(time.time())
+                },
+                ReturnValues='NONE'
+            )
     elif (event["clickType"] == "DOUBLE"):
-        emailMessage = """
+        emailTxtMessage = """
 Jeremy has told the Cloud Crier that he is happy...
 
 """
@@ -83,7 +93,7 @@ Jeremy has told the Cloud Crier that he is happy...
             ReturnValues='NONE'
         )
     else:
-        emailMessage = """
+        emailTxtMessage = """
 Jeremy has told the Cloud Crier that he is craving random.choice(['beer','bacon','amusement'])...
 
 Make it happen.  Now!  *clap*clap*"""
@@ -100,8 +110,66 @@ Make it happen.  Now!  *clap*clap*"""
             ReturnValues='NONE'
         )
 
+    emailHtmlMessage = """
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <style>
+        body {{
+            font-family: Arial;
+        }}
+        th {{
+            padding: 10px;
+            border: 1px solid #000000;
+        }}
+        td {{
+            padding: 5px;
+            border: 1px solid #000000;
+            background-color: #FBFFF1
+        }}
+    </style>
+    <title>Message from the cloud...</title>
+</head>
+<body style='background-color:#B4C5E4'>
+<h1 style='background-color: #3c3744; color: #FBFFF1; margin:5%; padding:5%'>{0}
+</h1>
+<div style='margin:5%'>
+<table style='border: 1px solid #090c9b;border-collapse: collapse;'>
+    <tr>
+        <th colspan='3' style='color: #FBFFF1;background-color: #090c9b'>Cumulative Count of Jeremy's Decrees</th>
+    </tr>
+    <tr>
+        <td style='background-color: #996600'>Don't give a shit</td>
+        <td><span style='font-weight:bold'>{1}</span></td>
+        <td><span style='font-size: 0.7em'>since</span> {2}</td>
+    </tr>
+    <tr>
+        <td style='background-color: #d9ffb3'>Happy</td>
+        <td><span style='font-weight:bold'>{3}</span></td>
+        <td><span style='font-size: 0.7em'>since</span> {4}</td>
+    </tr>
+    <tr>
+        <td>Craving XXX</td>
+        <td><span style='font-weight:bold'>{5}</span></td>
+        <td><span style='font-size: 0.7em'>since</span> {6}</td>
+    </tr>
+</table>
+</div>
+<h6 style='border: 1px solid #090c9b; text-align: center;  margin:5%; '>Learn more: <a href='http://www.cloudcrier.com' style='text-decoration: none'>www.CloudCrier.com</a></h6>
+
+</body>
+</html>""".format(
+        emailTxtMessage,
+        str(itemSingle['Item']['ButtonPressCount']),
+        datetime.datetime.fromtimestamp(itemSingle['Item']['ButtonPressTimestamp']).strftime("%a, %b %w %Y at %I:%M %p"),
+        str(itemDouble['Item']['ButtonPressCount']),
+        datetime.datetime.fromtimestamp(itemDouble['Item']['ButtonPressTimestamp']).strftime("%a, %b %w %Y at %I:%M %p"),
+        str(itemLong['Item']['ButtonPressCount']),
+        datetime.datetime.fromtimestamp(itemLong['Item']['ButtonPressTimestamp']).strftime("%a, %b %w %Y at %I:%M %p")
+    )
+
     # Append footer to email
-    emailMessage += emailFooter
+    emailTxtMessage += emailTxtFooter
 
     # Plagarized from http://mattharris.org/2016/02/introduction-aws-lambda/
     session = boto3.session.Session()
@@ -110,7 +178,7 @@ Make it happen.  Now!  *clap*clap*"""
         Source='CityCloud@CloudCrier.com',
         Destination={
             'ToAddresses': [
-                os.environ['Email_List']
+                'jeremy@CloudCrier.com', 'mike@CloudCrier.com', 'jim@CloudCrier.com'
             ]
         },
         Message={
@@ -119,12 +187,16 @@ Make it happen.  Now!  *clap*clap*"""
             },
             'Body': {
                 'Text': {
-                    'Data': emailMessage,
+                    'Data': emailTxtMessage,
+                },
+                'Html': {
+                    'Data': emailHtmlMessage,
                 },
             }
         },
     )
 
-    return "Message: ", emailMessage
+    return "Message: ", emailTxtMessage
 
 #['jeremy@CloudCrier.com','mike@CloudCrier.com','jim@CloudCrier.com']
+#os.environ['Email_List']
