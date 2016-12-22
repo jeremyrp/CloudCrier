@@ -8,7 +8,7 @@
 ## Used for Deployment Harness
 * Create user - CloudCrierPublish
 * Create group - CC_GRP_Publish
-* Create IAM policy
+* Create IAM policy - CC_POL_Publish
 ~~~~
 {
     "Version": "2012-10-17",
@@ -24,7 +24,7 @@
                 "lambda:UpdateAlias"
             ],
             "Resource": [
-                "arn:aws:lambda:YOUR_AWS_REGION:YOUR_AWS_ACCOUNT_ID:function:YOUR_FUNCTION_NAME"
+                "arn:aws:lambda:**YOUR_AWS_REGION**:**YOUR_AWS_ACCOUNT_ID**:function:**YOUR_FUNCTION_NAME**"
             ]
         }
     ]
