@@ -16,6 +16,7 @@ import decimal
 import time
 import logging
 import os
+import cPickle
 
 def cc_lambda_event(event, context):
 
@@ -80,35 +81,38 @@ Jeremy has told the Cloud Crier that he doesn't give a shit...
 Jeremy has told the Cloud Crier that he is happy...
 
 """
-        #Update DB record
-        response = table.update_item(
-            Key={
-                'ButtonPressType':"DOUBLE"
-            },
-            UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
-            ExpressionAttributeValues={
-                ":i": decimal.Decimal(1),
-                ":t": decimal.Decimal(time.time())
-            },
-            ReturnValues='NONE'
-        )
+        if DEBUG_FLAG != True:
+            #Update DB record
+            response = table.update_item(
+                Key={
+                    'ButtonPressType':"DOUBLE"
+                },
+                UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
+                ExpressionAttributeValues={
+                    ":i": decimal.Decimal(1),
+                    ":t": decimal.Decimal(time.time())
+                },
+                ReturnValues='NONE'
+            )
     else:
         emailTxtMessage = """
 Jeremy has told the Cloud Crier that he is craving random.choice(['beer','bacon','amusement'])...
 
 Make it happen.  Now!  *clap*clap*"""
-        # Update DB record
-        response = table.update_item(
-            Key={
-                'ButtonPressType': "LONG"
-            },
-            UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
-            ExpressionAttributeValues={
-                ":i": decimal.Decimal(1),
-                ":t": decimal.Decimal(time.time())
-            },
-            ReturnValues='NONE'
-        )
+
+        if DEBUG_FLAG != True:
+            # Update DB record
+            response = table.update_item(
+                Key={
+                    'ButtonPressType': "LONG"
+                },
+                UpdateExpression="set ButtonPressCount = ButtonPressCount + :i, ButtonPressTimestamp = :t",
+                ExpressionAttributeValues={
+                    ":i": decimal.Decimal(1),
+                    ":t": decimal.Decimal(time.time())
+                },
+                ReturnValues='NONE'
+            )
 
     emailHtmlMessage = """
 <!DOCTYPE html>
@@ -174,12 +178,15 @@ Make it happen.  Now!  *clap*clap*"""
     # Plagarized from http://mattharris.org/2016/02/introduction-aws-lambda/
     session = boto3.session.Session()
     ses = session.client('ses')
+    if DEBUG_FLAG != True:
+        emailList = os.environ['Email_List']
+    else:
+        emailList = "(lp1\nS'jeremy@cloudcrier.com'\np2\na."
+
     ses.send_email(
         Source='CityCloud@CloudCrier.com',
         Destination={
-            'ToAddresses': [
-                'jeremy@CloudCrier.com', 'mike@CloudCrier.com', 'jim@CloudCrier.com'
-            ]
+            'ToAddresses': cPickle.loads(emailList)
         },
         Message={
             'Subject': {
@@ -198,5 +205,8 @@ Make it happen.  Now!  *clap*clap*"""
 
     return "Message: ", emailTxtMessage
 
-#['jeremy@CloudCrier.com','mike@CloudCrier.com','jim@CloudCrier.com']
+#c__builtin__\nset\np1\n((lp2\nS'jeremy@CloudCrier.com'\np3\naS'mike@CloudCrier.com'\np4\naS'jim@CloudCrier.com'\np5\natRp6\n.
 #os.environ['Email_List']
+# '[
+# 'jeremy@CloudCrier.com', 'mike@CloudCrier.com', 'jim@CloudCrier.com'
+# ]
