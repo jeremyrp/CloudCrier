@@ -179,14 +179,14 @@ Make it happen.  Now!  *clap*clap*"""
     session = boto3.session.Session()
     ses = session.client('ses')
     if DEBUG_FLAG != True:
-        emailList = os.environ['Email_List']
+        emailList = os.environ['Email_List'].decode('string-escape')
     else:
         emailList = "(lp1\nS'jeremy@cloudcrier.com'\np2\na."
 
     ses.send_email(
         Source='CityCloud@CloudCrier.com',
         Destination={
-            'ToAddresses': cPickle.loads(emailList)
+            'ToAddresses': list(cPickle.loads(emailList))
         },
         Message={
             'Subject': {
